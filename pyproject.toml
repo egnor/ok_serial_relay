@@ -1,0 +1,25 @@
+[project]
+name = "ok-serial-message-relay"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "Dan Egnor", email = "egnor@ofb.net" }]
+requires-python = ">=3.9"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["mypy", "pytest", "ruff"]
+
+[project.scripts]
+okrelay = "ok_serial_message_relay.okrelay_cli:main"
+
+[tool.mypy]
+exclude_gitignore = true
+files = "."
+
+[tool.uv.build-backend]
+module-root = ""

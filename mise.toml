@@ -1,0 +1,10 @@
+[tools]
+python = "3.9"
+uv = "latest"
+
+[settings]
+experimental = true
+python.uv_venv_auto = true
+
+[hooks]
+postinstall = "uv sync"
