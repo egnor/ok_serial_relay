@@ -53,7 +53,7 @@ class TimeTracker:
 
         return None
 
-    def handle_received_query(
+    def on_query_received(
         self, query: proto.TimeQueryPayload, *, when: float
     ) -> None:
         self._pending_reply = proto.TimeReplyPayload(
@@ -65,7 +65,7 @@ class TimeTracker:
             profile_len=self._profile_len,
         )
 
-    def handle_received_reply(
+    def on_reply_received(
         self, reply: proto.TimeReplyPayload, *, when: float
     ) -> None:
         # TODO: actual time conversion tracking!!

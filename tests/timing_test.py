@@ -40,13 +40,13 @@ def test_outgoing_query_timing():
     assert tracker.get_payload_to_send(when=start + 10.6) is None
 
 
-def test_incoming_query_replies():
+def test_incoming_query_replying():
     start = JAN_1_2025_123456Z
     tracker = timing.TimeTracker(when=start, profile_id=123, profile_len=456)
     tracker.get_payload_to_send(when=start)
     assert not tracker.has_payload_to_send(when=start + 3)
 
-    tracker.handle_received_query(
+    tracker.on_query_received(
         proto.TimeQueryPayload(yyyymmdd=20260501, hhmmssmmm=123456888),
         when=start + 3
     )
@@ -57,7 +57,7 @@ def test_incoming_query_replies():
     assert not tracker.has_payload_to_send(when=start + 4)
 
     assert tracker.has_payload_to_send(when=start + 6)  # regular outgoing query
-    tracker.handle_received_query(
+    tracker.on_query_received(
         proto.TimeQueryPayload(yyyymmdd=20260501, hhmmssmmm=123502888),
         when=start + 6
     )
