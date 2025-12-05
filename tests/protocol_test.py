@@ -40,8 +40,8 @@ def test_line_from_bytes():
 
 def test_line_from_bytes_unchecked():
     for (prefix, payload, data) in LINE_CHECKS:
-        line_ltag = proto.try_parse_line(data[:-3] + b"!ck")
-        line_utag = proto.try_parse_line(data[:-3] + b"!CK")
+        line_ltag = proto.try_parse_line(data[:-3] + b"~~~")
+        line_utag = proto.try_parse_line(data[:-3] + b"~~~")
         assert line_ltag.prefix == line_utag.prefix == prefix
         assert msgspec.json.decode(line_ltag.json) == payload
         assert msgspec.json.decode(line_utag.json) == payload

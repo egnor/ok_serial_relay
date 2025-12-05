@@ -50,9 +50,9 @@ _crc18 = anycrc.CRC(
 assert _crc18.calc("123456789") == 0x23a17
 
 _LINE_RE = re.compile(
-    rb"\s*(\w*)"                           # prefix
-    rb"(^.*\s|\s.*\s|\[.*\]|{.*}|\".*\")"  # json
-    rb"([\w-]{3}|![Cc][Kk])\s*"            # crc18-base64 OR "!ck" marker
+    rb"\s*(\w*)"                                          # prefix
+    rb"(\s*(?:\".*\"|{.*}|\[.*\]|(?:^|\s)[\w.-]+\s)\s*)"  # json
+    rb"([\w-]{3}|~~~)\s*"                                 # crc/bypass
 )
 
 def try_parse_line(data: bytes) -> Line | None:
@@ -61,7 +61,7 @@ def try_parse_line(data: bytes) -> Line | None:
         logger.debug("Bad format: %s", data)
         return None
     prefix, json, check = match.groups()
-    if not check.startswith(b"!"):
+    if not check.startswith(b"~"):
         check_bytes = base64.urlsafe_b64decode(b"A" + check)
         check_value = int.from_bytes(check_bytes, "big")
         actual_crc = _crc18.calc(prefix + json)
