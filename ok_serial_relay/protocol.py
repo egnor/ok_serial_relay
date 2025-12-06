@@ -30,13 +30,13 @@ class TimeReplyPayload(msgspec.Struct, array_like=True, frozen=True):
     profile_id: int
     profile_len: int
 
-class ProfileQueryPayload(msgspec.Struct, array_like=True, frozen=True):
-    PREFIX = b"Pq"
+class ContextQueryPayload(msgspec.Struct, array_like=True, frozen=True):
+    PREFIX = b"Cq"
     start: int
     count: int
 
-class ProfileReplyPayload(msgspec.Struct, array_like=True, frozen=True):
-    PREFIX = b"Pr"
+class ContextReplyPayload(msgspec.Struct, array_like=True, frozen=True):
+    PREFIX = b"Cr"
     index: int
     type: str
     data: list
