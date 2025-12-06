@@ -13,10 +13,29 @@ json_encoder = msgspec.json.Encoder()
 
 
 class Line(msgspec.Struct, frozen=True):
-    """Basic unit of serial port exchange"""
-
     prefix: bytes
     json: bytes
+
+
+class MessagePayload(msgspec.Struct, array_like=True, frozen=True):
+    PREFIX = b""
+    topic: str
+    msec: int
+    schema: str
+    data: typing.Any
+
+
+class ProfileQueryPayload(msgspec.Struct, array_like=True, frozen=True):
+    PREFIX = b"Pq"
+    start: int
+    count: int
+
+
+class ProfileReplyPayload(msgspec.Struct, array_like=True, frozen=True):
+    PREFIX = b"Pr"
+    index: int
+    type: str
+    data: list
 
 
 class TimeQueryPayload(msgspec.Struct, array_like=True, frozen=True):
@@ -33,19 +52,6 @@ class TimeReplyPayload(msgspec.Struct, array_like=True, frozen=True):
     tx_msec: int
     profile_id: int
     profile_len: int
-
-
-class ProfileQueryPayload(msgspec.Struct, array_like=True, frozen=True):
-    PREFIX = b"Pq"
-    start: int
-    count: int
-
-
-class ProfileReplyPayload(msgspec.Struct, array_like=True, frozen=True):
-    PREFIX = b"Pr"
-    index: int
-    type: str
-    data: list
 
 
 # https://users.ece.cmu.edu/~koopman/crc/c18/0x25f53.txt
