@@ -4,13 +4,15 @@ import msgspec
 
 import ok_serial_relay.protocol as proto
 
+
 class ExamplePayload(msgspec.Struct):
     PREFIX = b"EXAMPLE"
     a: int
     b: str
 
+
 LINE_CHECKS = [
-    (b"PFX", [1,2,{"x": 3}], b'PFX[1,2,{"x":3}]Xwb'),
+    (b"PFX", [1, 2, {"x": 3}], b'PFX[1,2,{"x":3}]Xwb'),
     (b"", {"foo": "bar"}, b'{"foo":"bar"}rTj'),
     (b"", None, b"null 28q"),
     (b"PFX", None, b"PFX null 1Dw"),
@@ -26,20 +28,20 @@ LINE_CHECKS = [
 
 
 def test_line_to_bytes():
-    for (prefix, payload, data) in LINE_CHECKS:
+    for prefix, payload, data in LINE_CHECKS:
         line = proto.Line(prefix, msgspec.json.encode(payload))
-        assert(proto.line_to_bytes(line) == data)
+        assert proto.line_to_bytes(line) == data
 
 
 def test_line_from_bytes():
-    for (prefix, payload, data) in LINE_CHECKS:
+    for prefix, payload, data in LINE_CHECKS:
         line = proto.try_parse_line(data)
         assert line.prefix == prefix
         assert msgspec.json.decode(line.json) == payload
 
 
 def test_line_from_bytes_unchecked():
-    for (prefix, payload, data) in LINE_CHECKS:
+    for prefix, payload, data in LINE_CHECKS:
         line_ltag = proto.try_parse_line(data[:-3] + b"~~~")
         line_utag = proto.try_parse_line(data[:-3] + b"~~~")
         assert line_ltag.prefix == line_utag.prefix == prefix

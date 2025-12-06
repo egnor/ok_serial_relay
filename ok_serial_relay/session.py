@@ -10,9 +10,11 @@ logger = logging.getLogger(__name__)
 
 INCOMING_LINE_MAX = 131072
 
+
 class Session:
     def __init__(
-        self, *, 
+        self,
+        *,
         when: float,
         profile: list[msgspec.Struct] = [],
     ) -> None:
@@ -30,7 +32,7 @@ class Session:
         if self._time_tracker.has_payload_to_send(when=when):
             if not buffer_empty:
                 return b""  # priority buffer-empty for timed message
-            if (payload := self._time_tracker.get_payload_to_send(when=when)):
+            if payload := self._time_tracker.get_payload_to_send(when=when):
                 to_send = proto.line_from_payload(payload)
 
         if to_send:
@@ -47,7 +49,7 @@ class Session:
                 self._buffer_bytes.extend(data[:newline_pos])
                 self._parse_buffered_line()
                 self._buffer_bytes[:] = b""
-                data = data[newline_pos + 1:]
+                data = data[newline_pos + 1 :]
             else:
                 self._buffer_bytes.extend(data)
                 if len(self._buffer_bytes) >= INCOMING_LINE_MAX:
@@ -58,7 +60,7 @@ class Session:
         if not (line := proto.try_parse_line(self._buffer_bytes)):
             return
         logger.debug("Received: %s", line)
-        if (qp := proto.try_decode_json(line, proto.TimeQueryPayload)):
+        if qp := proto.try_decode_json(line, proto.TimeQueryPayload):
             self._time_tracker.on_query_received(qp, when=self._buffer_time)
-        elif (rp := proto.try_decode_json(line, proto.TimeReplyPayload)):
+        elif rp := proto.try_decode_json(line, proto.TimeReplyPayload):
             self._time_tracker.on_reply_received(rp, when=self._buffer_time)

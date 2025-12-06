@@ -10,12 +10,10 @@ logger = logging.getLogger(__name__)
 
 TIME_QUERY_INTERVAL = 5.0
 
+
 class TimeTracker:
     def __init__(
-        self, *,
-        when: float,
-        profile_id: int,
-        profile_len: int
+        self, *, when: float, profile_id: int, profile_len: int
     ) -> None:
         self._start_time = when
         self._next_query_time = when  # start immediately
@@ -26,11 +24,9 @@ class TimeTracker:
     def has_payload_to_send(self, *, when: float) -> bool:
         return bool(self._pending_reply or when >= self._next_query_time)
 
-    def get_payload_to_send(self, *, when: float) -> (
-        proto.TimeQueryPayload |
-        proto.TimeReplyPayload |
-        None
-    ):
+    def get_payload_to_send(
+        self, *, when: float
+    ) -> proto.TimeQueryPayload | proto.TimeReplyPayload | None:
         if self._pending_reply:
             msec = int((when - self._start_time) * 1e3 + 0.5)
             reply = msgspec.structs.replace(self._pending_reply, tx_msec=msec)
@@ -39,15 +35,17 @@ class TimeTracker:
 
         if when >= self._next_query_time:
             self._next_query_time = max(
-                self._next_query_time + TIME_QUERY_INTERVAL, 
-                when + TIME_QUERY_INTERVAL - 1
+                self._next_query_time + TIME_QUERY_INTERVAL,
+                when + TIME_QUERY_INTERVAL - 1,
             )
             dt = datetime.datetime.fromtimestamp(when, datetime.timezone.utc)
             return proto.TimeQueryPayload(
                 yyyymmdd=int(dt.year * 10000 + dt.month * 100 + dt.day),
                 hhmmssmmm=int(
-                    dt.hour * 10000000 + dt.minute * 100000 +
-                    dt.second * 1000 + dt.microsecond // 1000
+                    dt.hour * 10000000
+                    + dt.minute * 100000
+                    + dt.second * 1000
+                    + dt.microsecond // 1000
                 ),
             )
 

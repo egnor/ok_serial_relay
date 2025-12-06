@@ -16,10 +16,13 @@ requires = ["uv_build>=0.9.13,<0.10.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["mypy", "pytest", "ruff"]
+dev = ["black", "mypy", "pytest", "ruff"]
 
 [project.scripts]
 okrelay = "ok_serial_relay.okrelay_cli:main"
+
+[tool.black]
+line-length = 80
 
 [tool.mypy]
 exclude_gitignore = true
