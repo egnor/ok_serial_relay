@@ -5,9 +5,8 @@ import base64
 import logging
 import msgspec
 import re
-import typing
 
-from ok_serial_relay.line_types import Line
+from ok_serial_relay.line_types import Line, PayloadBase
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,8 @@ _LINE_RE = re.compile(
     rb"(\s*(?:\".*\"|{.*}|\[.*\]|(?:^|\s)[\w.-]+\s)\s*)"  # json
     rb"([\w-]{3}|~~~)\s*"  # crc/bypass
 )
+
+_PREFIX_MAP = None  # lazily initialized in try_get_payload
 
 
 def try_from_bytes(data: bytes) -> Line | None:
@@ -69,11 +70,11 @@ def to_bytes(line: Line | None) -> bytes:
     return bytes(out)
 
 
-_T = typing.TypeVar("_T", bound=msgspec.Struct)
-
-
-def try_payload(line: Line | None, payload_type: type[_T]) -> _T | None:
-    if line and line.prefix == getattr(payload_type, "PREFIX", None):
+def try_get_payload(line: Line | None) -> PayloadBase | None:
+    global _PREFIX_MAP
+    if not (pmap := _PREFIX_MAP):
+        pmap = _PREFIX_MAP = {c.PREFIX: c for c in PayloadBase.__subclasses__()}
+    if line and (payload_type := pmap.get(line.prefix)):
         try:
             return msgspec.json.decode(line.payload, type=payload_type)
         except msgspec.DecodeError:
@@ -82,7 +83,6 @@ def try_payload(line: Line | None, payload_type: type[_T]) -> _T | None:
     return None
 
 
-def from_payload(payload: _T) -> Line:
-    prefix = getattr(type(payload), "PREFIX")
+def from_payload(payload: PayloadBase) -> Line:
     payload_json = msgspec.json.encode(payload)
-    return Line(prefix=prefix, payload=msgspec.Raw(payload_json))
+    return Line(prefix=payload.PREFIX, payload=msgspec.Raw(payload_json))

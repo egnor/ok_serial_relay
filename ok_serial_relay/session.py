@@ -1,6 +1,7 @@
 """Session-level protocol state"""
 
 import logging
+import msgspec
 import typing
 
 from ok_serial_relay import foxglove_jsonschema
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 INCOMING_LINE_MAX = 65536
 
 
-class ReceivedMessage(typing.NamedTuple):
+class IncomingMessage(msgspec.Struct):
     topic: str
     body: typing.Any  # JSON payload
     schema_data: bytes
@@ -26,13 +27,13 @@ class Session:
         self,
         *,
         when: float,
-        profile: list[line_types.ProfileEntryPayload] = [],
+        profile: list[line_types.ProfileEntryBase] = [],
     ) -> None:
         self._in_bytes = bytearray()
         self._in_bytes_time = 0.0
-        self._in_messages: list[ReceivedMessage] = []
+        self._in_messages: list[IncomingMessage] = []
         self._local_profile = profile[:]
-        self._remote_profile: list[line_types.ProfileEntryPayload] = []
+        self._remote_profile: list[line_types.ProfileEntryBase] = []
         self._time_tracker = timing.TimeTracker(
             when=when,
             profile_id=hash(tuple(profile)),
@@ -68,26 +69,29 @@ class Session:
                     self._in_bytes[:] = b""
                 return
 
-    def get_received_messages(self) -> list[ReceivedMessage]:
+    def get_received_messages(self) -> list[IncomingMessage]:
         out, self._in_messages = self._in_messages, []
         return out
 
     def _parse_one_line(self) -> None:
         if not (line := line_parsing.try_from_bytes(self._in_bytes)):
             return
-        if qp := line_parsing.try_payload(line, line_types.TimeQueryPayload):
-            logger.debug("Received: %s", qp)
-            self._time_tracker.on_query_received(qp, when=self._in_bytes_time)
-        elif rp := line_parsing.try_payload(line, line_types.TimeReplyPayload):
-            logger.debug("Received: %s", rp)
-            self._time_tracker.on_reply_received(rp, when=self._in_bytes_time)
-        elif mp := line_parsing.try_payload(line, line_types.MessagePayload):
-            logger.debug("Received: %s", mp)
-            self._in_messages.append(self._import_message(mp))
+        if payload := line_parsing.try_get_payload(line):
+            logger.debug("Received: %s", payload)
+            when = self._in_bytes_time
+            match payload:
+                case line_types.TimeQueryPayload as tqp:
+                    self._time_tracker.on_query_received(tqp, when=when)
+                case line_types.TimeReplyPayload as trp:
+                    self._time_tracker.on_reply_received(trp, when=when)
+                case line_types.PublishPayload as mp:
+                    self._in_messages.append(self._import_message(mp))
+                case _ as unk:
+                    logger.warning("Unknown payload: %s", unk)
         else:
             logger.warning("Unknown: %s", line)
 
-    def _import_message(self, m: line_types.MessagePayload) -> ReceivedMessage:
+    def _import_message(self, m: line_types.PublishPayload) -> IncomingMessage:
         schema = m.schema_name
         if not schema:
             schema_data = b""
@@ -101,7 +105,7 @@ class Session:
             logger.warning("Bad schema type: %s", m)
             schema_data = b"ERROR:INVALID:" + schema.encode()
 
-        return ReceivedMessage(
+        return IncomingMessage(
             topic=m.topic,
             body=m.body,
             schema_data=schema_data,

@@ -7,12 +7,10 @@ from ok_serial_relay import line_parsing
 from ok_serial_relay import line_types
 
 
-class ExamplePayload(msgspec.Struct, array_like=True, omit_defaults=True):
+class ExamplePayload(line_types.PayloadBase):
+    PREFIX = b"EXAMPLE"
     a: int
     b: str = "def"
-
-
-ExamplePayload.PREFIX = b"EXAMPLE"  # type: ignore[attr-defined]
 
 
 LINE_CHECKS = [
@@ -56,28 +54,26 @@ def test_try_parse_unchecked():
         assert msgspec.json.decode(line_utag.payload) == payload_data
 
 
-def test_try_as():
-    example_line = line_types.Line(prefix=b"EXAMPLE", payload=b'[1,"x"]')
-    example_payload = line_parsing.try_payload(example_line, ExamplePayload)
-    assert example_payload == ExamplePayload(a=1, b="x")
+def test_try_get_payload():
+    line = line_types.Line(prefix=b"EXAMPLE", payload=b'[1,"x"]')
+    payload = line_parsing.try_get_payload(line)
+    assert payload == ExamplePayload(a=1, b="x")
 
-    example_line = line_types.Line(prefix=b"EXAMPLE", payload=b"[1]")
-    example_payload = line_parsing.try_payload(example_line, ExamplePayload)
-    assert example_payload == ExamplePayload(a=1, b="def")
+    line = line_types.Line(prefix=b"EXAMPLE", payload=b"[1]")
+    payload = line_parsing.try_get_payload(line)
+    assert payload == ExamplePayload(a=1, b="def")
 
-    example_line = line_types.Line(prefix=b"OTHER", payload=b'[1,"x"]')
-    example_payload = line_parsing.try_payload(example_line, ExamplePayload)
-    assert example_payload is None
+    line = line_types.Line(prefix=b"OTHER", payload=b'[1,"x"]')
+    payload = line_parsing.try_get_payload(line)
+    assert payload is None
 
-    example_line = line_types.Line(prefix=b"EXAMPLE", payload=b'["x",1]')
-    example_payload = line_parsing.try_payload(example_line, ExamplePayload)
-    assert example_payload is None
+    line = line_types.Line(prefix=b"EXAMPLE", payload=b'["x",1]')
+    payload = line_parsing.try_get_payload(line)
+    assert payload is None
 
-    message_line = line_types.Line(prefix=b"", payload=b'["t",{},123,"s"]')
-    message_payload = line_parsing.try_payload(
-        message_line, line_types.MessagePayload
-    )
-    assert message_payload == line_types.MessagePayload(
+    line = line_types.Line(prefix=b"", payload=b'["t",{},123,"s"]')
+    payload = line_parsing.try_get_payload(line)
+    assert payload == line_types.PublishPayload(
         "t", msgspec.Raw(b"{}"), 123, "s"
     )
 
