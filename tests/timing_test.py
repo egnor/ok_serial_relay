@@ -50,8 +50,6 @@ def test_incoming_query_replying():
         hhmmssmmm=123456888,
         rx_msec=3000,
         tx_msec=3456,
-        profile_id=123,
-        profile_len=456,
     )
     assert tracker.get_payload_to_send(when=start + 3.456) == trp
     assert not tracker.has_payload_to_send(when=start + 4)
@@ -64,8 +62,6 @@ def test_incoming_query_replying():
         hhmmssmmm=123502888,
         rx_msec=6000,
         tx_msec=6100,
-        profile_id=123,
-        profile_len=456,
     )
     assert tracker.get_payload_to_send(when=start + 6.1) == trp
     tqp = line_types.TimeQueryPayload(yyyymmdd=20250101, hhmmssmmm=123502200)

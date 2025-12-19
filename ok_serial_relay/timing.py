@@ -17,8 +17,6 @@ class TimeTracker:
         self._start_time = when
         self._next_query_time = when  # start immediately
         self._pending_reply: TimeReplyPayload | None = None
-        self._profile_id = profile_id
-        self._profile_len = profile_len
 
     def has_payload_to_send(self, *, when: float) -> bool:
         return bool(self._pending_reply or when >= self._next_query_time)
@@ -62,8 +60,6 @@ class TimeTracker:
             hhmmssmmm=query.hhmmssmmm,
             rx_msec=int((when - self._start_time) * 1e3 + 0.5),
             tx_msec=0,
-            profile_id=self._profile_id,
-            profile_len=self._profile_len,
         )
 
     def on_reply_received(

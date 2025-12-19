@@ -73,11 +73,23 @@ def test_try_as():
     example_payload = line_parsing.try_payload(example_line, ExamplePayload)
     assert example_payload is None
 
+    message_line = line_types.Line(prefix=b"", payload=b'["t",{},123,"s"]')
+    message_payload = line_parsing.try_payload(
+        message_line, line_types.MessagePayload
+    )
+    assert message_payload == line_types.MessagePayload(
+        "t", msgspec.Raw(b"{}"), 123, "s"
+    )
+
 
 def test_from_payload():
     line = line_parsing.from_payload(ExamplePayload(a=1, b="x"))
-    assert line == line_types.Line(prefix=b"EXAMPLE", payload=b'[1,"x"]')
+    assert line == line_types.Line(
+        prefix=b"EXAMPLE", payload=msgspec.Raw(b'[1,"x"]')
+    )
 
     # we wish the default value was elided!
     line = line_parsing.from_payload(ExamplePayload(a=1, b="def"))
-    assert line == line_types.Line(prefix=b"EXAMPLE", payload=b'[1,"def"]')
+    assert line == line_types.Line(
+        prefix=b"EXAMPLE", payload=msgspec.Raw(b'[1,"def"]')
+    )
