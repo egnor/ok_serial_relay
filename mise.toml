@@ -7,7 +7,7 @@ experimental = true
 python.uv_venv_auto = true
 
 [hooks]
-postinstall = "uv sync"
+postinstall = "mise x -- uv sync"
 
 [tasks.check]
 run = ["uv sync", "black --check .", "ruff check", "mypy", "pytest"]

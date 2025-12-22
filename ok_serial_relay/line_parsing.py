@@ -2,6 +2,7 @@
 
 import anycrc  # type: ignore
 import base64
+import functools
 import logging
 import msgspec
 import re
@@ -29,8 +30,6 @@ _LINE_RE = re.compile(
     rb"(\s*(?:\".*\"|{.*}|\[.*\]|(?:^|\s)[\w.-]+\s)\s*)"  # json
     rb"([\w-]{3}|~~~)\s*"  # crc/bypass
 )
-
-_PREFIX_MAP = None  # lazily initialized in try_get_payload
 
 
 def try_from_bytes(data: bytes) -> Line | None:
@@ -70,10 +69,13 @@ def to_bytes(line: Line | None) -> bytes:
     return bytes(out)
 
 
+@functools.cache
+def _prefix_map() -> dict[bytes, type[PayloadBase]]:
+    return {c.PREFIX: c for c in PayloadBase.__subclasses__()}
+
+
 def try_get_payload(line: Line | None) -> PayloadBase | None:
-    global _PREFIX_MAP
-    if not (pmap := _PREFIX_MAP):
-        pmap = _PREFIX_MAP = {c.PREFIX: c for c in PayloadBase.__subclasses__()}
+    pmap = _prefix_map()
     if line and (payload_type := pmap.get(line.prefix)):
         try:
             return msgspec.json.decode(line.payload, type=payload_type)
